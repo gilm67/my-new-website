@@ -1,0 +1,41 @@
+[
+  {
+    "name": "Gil Malalel",
+    "position": "SRM",
+    "aum": "500M",
+    "market": "Geneva",
+    "keyStrengths": [
+      "UHNW & Family Office coverage",
+      "Expertise in private markets & structured products",
+      "Track record in business development and client acquisition"
+    ]
+  },
+  {
+    "name": "John Doe",
+    "position": "Private Banker",
+    "aum": "200M",
+    "market": "Dubai",
+    "keyStrengths": ["LATAM & Offshore expertise", "Strong NNM acquisition"]
+  },
+  {
+    "name": "Jane Smith",
+    "position": "Senior RM",
+    "aum": "350M",
+    "market": "Zurich",
+    "keyStrengths": ["Swiss Onshore HNW", "Discretionary portfolio experience"]
+  },
+  {
+    "name": "Pierre Dupont",
+    "position": "Private Banker",
+    "aum": "180M",
+    "market": "Lausanne",
+    "keyStrengths": ["French-speaking HNW", "Wealth planning expertise"]
+  },
+  {
+    "name": "Sarah Meier",
+    "position": "Team Head",
+    "aum": "600M",
+    "market": "Hong Kong",
+    "keyStrengths": ["APAC UHNW networks", "Cross-border investment strategies"]
+  }
+]
