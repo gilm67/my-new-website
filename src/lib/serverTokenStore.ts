@@ -1,4 +1,3 @@
-// src/lib/serverTokenStore.ts
 import fs from "fs";
 import path from "path";
 
@@ -21,7 +20,7 @@ function writeTokens(tokens: TokenEntry[]) {
   fs.writeFileSync(TOKENS_FILE, JSON.stringify(tokens, null, 2));
 }
 
-// ✅ Step 2: Clean expired tokens automatically
+// ✅ Clean expired tokens automatically
 export function cleanExpiredTokens() {
   const now = Date.now();
   const tokens = readTokens();
@@ -52,4 +51,13 @@ export function getAllTokens() {
 export function deleteToken(token: string) {
   const tokens = readTokens().filter((t) => t.token !== token);
   writeTokens(tokens);
+}
+
+// ✅ Validate a token (NEW FUNCTION)
+export function validateToken(token: string): boolean {
+  const now = Date.now();
+  const tokens = cleanExpiredTokens(); // auto-removes expired tokens
+  return tokens.some(
+    (t) => t.token === token && now < t.createdAt + t.ttlHours * 3600 * 1000
+  );
 }

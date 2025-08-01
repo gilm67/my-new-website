@@ -1,34 +1,23 @@
 "use client";
 
-export default function BusinessPlanPage() {
-  const downloadPDF = () => {
-    // ✅ This forces browser to download instead of showing inline
-    const url = `/api/generate-pdf?name=Gil%20Malalel&position=SRM&aum=500`;
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "candidate.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+import React from "react";
 
+export default function BusinessPlanPage() {
   return (
-    <div style={{ textAlign: "center", padding: "50px" }}>
-      <h1>Candidate PDF Generator</h1>
-      <button
-        onClick={downloadPDF}
-        style={{
-          marginTop: "20px",
-          padding: "10px 20px",
-          fontSize: "16px",
-          backgroundColor: "#0A2A66",
-          color: "white",
-          borderRadius: "6px",
-          cursor: "pointer",
-        }}
-      >
-        Download Candidate PDF
-      </button>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-8">
+      <h1 className="text-3xl font-bold mb-6 text-center">
+        💼 Business Plan Simulator
+      </h1>
+      <p className="text-gray-600 mb-6 text-center max-w-2xl">
+        Use our interactive tool to simulate your 3-year private banking business plan.
+      </p>
+
+      {/* Embed the Python Streamlit app via iframe */}
+      <iframe
+        src="http://localhost:8502"
+        className="w-full h-[900px] border rounded-lg shadow-lg"
+        title="Business Plan Simulator"
+      />
     </div>
   );
 }
