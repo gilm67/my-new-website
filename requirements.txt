@@ -1,4 +1,8 @@
 streamlit
 pandas
 numpy
+gspread
+google-auth
+matplotlib
+watchdog
 XlsxWriter

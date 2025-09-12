@@ -1,133 +1,127 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from io import BytesIO
 
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Business Plan 3Y Simulator", layout="wide")
+st.title("💼 Business Plan 3-Year Simulator")
 
-st.title("💼 Business Plan Simulator")
+st.write("Simulate a 3-year business plan with revenue, costs, and net margin, matching Excel outputs.")
 
-# =========================
+# -----------------------------
 # 1️⃣ Candidate Info
-# =========================
-st.header("1️⃣ Candidate Information")
-candidate_name = st.text_input("Candidate Name")
-market_covered = st.text_input("Market Covered")
+# -----------------------------
+st.sidebar.header("👤 Candidate Information")
+candidate_name = st.sidebar.text_input("Candidate Name", "")
+market = st.sidebar.text_input("Market Covered", "")
 
-# =========================
-# 2️⃣ Input Parameters
-# =========================
-st.header("2️⃣ Key Parameters")
+# -----------------------------
+# 2️⃣ Business Inputs
+# -----------------------------
+st.header("1️⃣ Business Assumptions")
 
-fte_year1 = st.slider("FTE Months - Year 1", 0, 12, 7)
-fte_year2 = st.slider("FTE Months - Year 2", 0, 12, 7)
-fte_year3 = st.slider("FTE Months - Year 3", 0, 12, 7)
+col1, col2, col3 = st.columns(3)
+team_size = col1.number_input("Team Size", min_value=1, value=1, step=1)
+cum_clients_y1 = col2.number_input("Cumulated Clients Year 1", 0, step=1, value=5)
+cum_clients_y2 = col3.number_input("Cumulated Clients Year 2", 0, step=1, value=6)
+cum_clients_y3 = st.number_input("Cumulated Clients Year 3", 0, step=1, value=10)
 
-aum_growth = st.number_input("Expected Annual AUM Growth (%)", 0.0, 100.0, 10.0)
-revenue_margin = st.number_input("Revenue Margin (%)", 0.0, 100.0, 0.7)
-opex_per_fte = st.number_input("Operating Expense per FTE (CHF)", 0.0, 1e7, 200000.0)
+col1, col2, col3 = st.columns(3)
+nnm_y1 = col1.number_input("NNM Year 1 (Million)", 0.0, step=0.1, value=100.0)
+nnm_y2 = col2.number_input("NNM Year 2 (Million)", 0.0, step=0.1, value=150.0)
+nnm_y3 = col3.number_input("NNM Year 3 (Million)", 0.0, step=0.1, value=200.0)
 
-# =========================
-# 3️⃣ Compute Business Plan
-# =========================
-st.header("3️⃣ Business Plan Calculation")
+col1, col2, col3 = st.columns(3)
+fte_y1 = col1.slider("FTE Months Year 1", 1, 12, 7)
+fte_y2 = col2.slider("FTE Months Year 2", 1, 12, 7)
+fte_y3 = col3.slider("FTE Months Year 3", 1, 12, 7)
 
-years = ["Year 1", "Year 2", "Year 3"]
-fte_months = [fte_year1, fte_year2, fte_year3]
-fte_costs = [(m / 12) * opex_per_fte for m in fte_months]
-revenues = [fte_cost * (revenue_margin / 100) * (1 + aum_growth / 100) for fte_cost in fte_costs]
-profits = [rev - cost for rev, cost in zip(revenues, fte_costs)]
+roa_percent = st.number_input("Return on Assets (%)", 0.0, 100.0, value=1.0) / 100
 
+# -----------------------------
+# 3️⃣ Cost Structure
+# -----------------------------
+st.header("2️⃣ Cost Structure (CHF)")
+
+cost_labels = [
+    "Annual base salary (Head)",
+    "Social charges (25% package)",
+    "Personal Training",
+    "Marketing Events",
+    "Mobile Phone",
+    "Travel Expenses",
+    "Other General Expenses"
+]
+
+defaults = [200_000, 50_000, 0, 0, 0, 0, 0]
+cost_inputs = []
+cols = st.columns(len(cost_labels))
+
+for i, label in enumerate(cost_labels):
+    val = cols[i].number_input(label, min_value=0.0, value=float(defaults[i]), step=100.0)
+    cost_inputs.append(val)
+
+total_costs = sum(cost_inputs)
+
+# -----------------------------
+# 4️⃣ Calculations (Matching Excel)
+# -----------------------------
+cum_nnm_y1 = nnm_y1
+cum_nnm_y2 = nnm_y1 + nnm_y2
+cum_nnm_y3 = nnm_y1 + nnm_y2 + nnm_y3
+
+fte_in_nnm_y1 = nnm_y1 / 12 * fte_y1
+fte_in_nnm_y2 = nnm_y2 / 12 * fte_y2 + cum_nnm_y1
+fte_in_nnm_y3 = nnm_y3 / 12 * fte_y3 + cum_nnm_y2
+
+# Total Revenue in CHF
+total_rev_y1 = fte_in_nnm_y1 * 1_000_000 * roa_percent
+total_rev_y2 = fte_in_nnm_y2 * 1_000_000 * roa_percent
+total_rev_y3 = fte_in_nnm_y3 * 1_000_000 * roa_percent
+
+# Cumulated Revenue
+cum_rev_y1 = total_rev_y1
+cum_rev_y2 = total_rev_y1 + total_rev_y2
+cum_rev_y3 = total_rev_y2 + total_rev_y3
+
+# Net Margins
+net_margin_y1 = total_rev_y1 - total_costs
+net_margin_y2 = total_rev_y2 - total_costs
+net_margin_y3 = total_rev_y3 - total_costs
+
+cum_net_y1 = net_margin_y1
+cum_net_y2 = net_margin_y1 + net_margin_y2
+cum_net_y3 = net_margin_y2 + net_margin_y3
+
+# -----------------------------
+# 5️⃣ Summary Table
+# -----------------------------
 summary_df = pd.DataFrame({
-    "Year": years,
-    "FTE Months": fte_months,
-    "FTE Costs (CHF)": fte_costs,
-    "Revenue (CHF)": revenues,
-    "Profit (CHF)": profits
+    "Year": ["Y1", "Y2", "Y3"],
+    "NNM (M)": [nnm_y1, nnm_y2, nnm_y3],
+    "Cum NNM (M)": [cum_nnm_y1, cum_nnm_y2, cum_nnm_y3],
+    "Revenue CHF": [total_rev_y1, total_rev_y2, total_rev_y3],
+    "Cum Revenue CHF": [cum_rev_y1, cum_rev_y2, cum_rev_y3],
+    "Net Margin CHF": [net_margin_y1, net_margin_y2, net_margin_y3],
+    "Cum Net Margin CHF": [cum_net_y1, cum_net_y2, cum_net_y3],
+    "Cum Clients": [cum_clients_y1, cum_clients_y2, cum_clients_y3]
 })
 
-# ✅ FIX: Format only numeric columns
-numeric_cols = summary_df.select_dtypes(include=["float", "int"]).columns
-st.subheader("4️⃣ Summary Results (CHF)")
-st.dataframe(summary_df.style.format({col: "{:,.2f}" for col in numeric_cols}))
+st.dataframe(summary_df.style.format("{:,.0f}"))
 
-# =========================
-# 5️⃣ Export to Excel
-# =========================
+# -----------------------------
+# 6️⃣ Excel Download
+# -----------------------------
 output = BytesIO()
 with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-    summary_df.to_excel(writer, sheet_name="Summary", index=False)
-    
-    # Candidate info sheet
-    info_df = pd.DataFrame({"Candidate Name": [candidate_name], "Market Covered": [market_covered]})
-    info_df.to_excel(writer, sheet_name="Inputs", index=False)
-    
-    # Landscape orientation
-    worksheet = writer.sheets["Summary"]
-    worksheet.set_landscape()
+    summary_df.to_excel(writer, index=False, sheet_name="Summary")
+    pd.DataFrame(cost_inputs, index=cost_labels, columns=["Amount"]).to_excel(writer, sheet_name="Costs")
 
-# Prepare download filename
-filename = f"BusinessPlan_{candidate_name.replace(' ', '')}_{market_covered.replace(' ', '')}.xlsx"
-
+file_name = f"BusinessPlan_{candidate_name}_{market}.xlsx".replace(" ", "_")
 st.download_button(
-    label="📥 Download Business Plan (Excel)",
+    label="📥 Download 3-Year Plan (Excel)",
     data=output.getvalue(),
-    file_name=filename,
+    file_name=file_name,
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
 
-# =========================
-# 6️⃣ Business Plan Clients Breakdown
-# =========================
-st.header("6️⃣ Business Plan Clients Breakdown")
-
-if "clients" not in st.session_state:
-    st.session_state.clients = []
-
-# --- Add client button ---
-if st.button("➕ Add Client"):
-    st.session_state.clients.append({
-        "Client #": len(st.session_state.clients) + 1,
-        "Resident": "",
-        "Region": "",
-        "Overall Asset (M CHF)": 0.0,
-        "Base Hypothesis Assets (NNM) (M CHF)": 0.0
-    })
-
-# --- Render each client with delete option ---
-updated_clients = []
-for idx, client in enumerate(st.session_state.clients):
-    cols = st.columns([0.5, 1, 1, 1, 1, 0.5])
-    
-    client_number = cols[0].text_input("Client #", value=client["Client #"], key=f"num_{idx}", disabled=True)
-    resident = cols[1].text_input("Resident", value=client["Resident"], key=f"res_{idx}")
-    region = cols[2].text_input("Region", value=client["Region"], key=f"reg_{idx}")
-    overall_asset = cols[3].number_input("Overall Asset (M CHF)", value=float(client["Overall Asset (M CHF)"]), key=f"oa_{idx}", min_value=0.0)
-    base_nnm = cols[4].number_input("Base Hypothesis Assets (NNM) (M CHF)", value=float(client["Base Hypothesis Assets (NNM) (M CHF)"]), key=f"nnm_{idx}", min_value=0.0)
-    
-    delete = cols[5].button("🗑️", key=f"del_{idx}")
-    
-    if not delete:
-        updated_clients.append({
-            "Client #": client_number,
-            "Resident": resident,
-            "Region": region,
-            "Overall Asset (M CHF)": overall_asset,
-            "Base Hypothesis Assets (NNM) (M CHF)": base_nnm
-        })
-
-st.session_state.clients = updated_clients
-
-# --- Totals ---
-if st.session_state.clients:
-    df_clients = pd.DataFrame(st.session_state.clients)
-    total_overall = df_clients["Overall Asset (M CHF)"].sum()
-    total_nnm = df_clients["Base Hypothesis Assets (NNM) (M CHF)"].sum()
-    st.markdown(f"**Total in Million:** Overall Assets = {total_overall:.2f} M CHF | NNM = {total_nnm:.2f} M CHF")
-else:
-    st.info("No clients added yet.")
-
-# --- Clear All Button ---
-if st.button("Clear All Clients"):
-    st.session_state.clients = []
-    st.experimental_rerun()
+st.success("✅ 3-Year Business Plan ready. Adjust inputs to see real-time results!")
