@@ -9,3 +9,9 @@ coverage/
 npm-debug.log*
 yarn-*.log*
 pnpm-debug.log*
+# local data + tokens
+.data/
+tokens.json
+
+# local experiments/backups (optional)
+backups/
