@@ -1,0 +1,30 @@
+// app/layout.tsx
+import { LocaleProvider } from '@/locale/LocaleContext';
+import "./globals.css";
+import type { Metadata } from "next";
+import Header from "@/site/components/Header";
+import Footer from "@/site/components/Footer";
+
+export const metadata: Metadata = {
+  title: "Executive Partners",
+  description: "Private Banking & Wealth Management Executive Search",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen bg-[#0B0E13] text-white flex flex-col">
+        <LocaleProvider locale="en">
+          {/* Global header/nav */}
+          <Header />
+
+          {/* Main page content */}
+          <main className="flex-1">{children}</main>
+
+          {/* Global footer */}
+          <Footer />
+        </LocaleProvider>
+      </body>
+    </html>
+  );
+}

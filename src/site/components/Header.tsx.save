@@ -1,0 +1,104 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+
+type NavItem = { href: string; label: string };
+
+const NAV: NavItem[] = [
+  { href: '/jobs', label: 'Jobs' },
+  { href: '/markets', label: 'Markets We Serve' }, // ✅ new item
+  { href: '/insights', label: 'Insights' },
+  { href: '/candidates', label: 'Candidates' },
+  { href: '/hiring-managers', label: 'Hiring Managers' },
+  { href: '/bp-simulator', label: 'BP Simulator' },
+  { href: '/about', label: 'About' },
+  { href: '/contact', label: 'Contact' },
+];
+
+function NavLink({ href, label, onClick }: { href: string; label: string; onClick?: () => void }) {
+  const pathname = usePathname();
+  const active =
+    pathname === href ||
+    (href !== '/' && pathname?.startsWith(href));
+
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={`px-3 py-2 text-sm font-medium transition ${
+        active ? 'text-white' : 'text-neutral-300 hover:text-white'
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
+export default function Header() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0B0E13]/80 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+        {/* Brand */}
+        <Link href="/" className="flex items-center gap-2">
+          <div className="h-7 w-7 rounded bg-emerald-500/90" />
+          <span className="text-sm font-semibold tracking-wide text-white">
+            Executive Partners
+          </span>
+        </Link>
+
+        {/* Desktop nav */}
+        <nav className="hidden items-center md:flex">
+          {NAV.map((item) => (
+            <NavLink key={item.href} href={item.href} label={item.label} />
+          ))}
+        </nav>
+
+        {/* Right-side CTA (desktop) */}
+        <div className="hidden md:block">
+          <Link
+            href="/apply"
+            className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+          >
+            Submit CV
+          </Link>
+        </div>
+
+        {/* Mobile menu button */}
+        <button
+          aria-label="Toggle menu"
+          className="inline-flex items-center justify-center rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm text-white md:hidden"
+          onClick={() => setOpen((s) => !s)}
+        >
+          {open ? 'Close' : 'Menu'}
+        </button>
+      </div>
+
+      {/* Mobile sheet */}
+      {open && (
+        <div className="border-t border-white/10 bg-[#0B0E13] md:hidden">
+          <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3">
+            {NAV.map((item) => (
+              <NavLink
+                key={item.href}
+                href={item.href}
+                label={item.label}
+                onClick={() => setOpen(false)}
+              />
+            ))}
+            <Link
+              href="/apply"
+              onClick={() => setOpen(false)}
+              className="mt-2 inline-flex items-center justify-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+            >
+              Submit CV
+            </Link>
+          </nav>
+        </div>
+      )}
+    </header>
+  );
+}

@@ -1,0 +1,77 @@
+/* =========================
+   app/globals.css (Tailwind v3)
+   ========================= */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Base ---- */
+:root { color-scheme: dark; }
+html, body { height: 100%; margin: 0; }
+
+@layer base {
+  html { @apply scroll-smooth; }
+  body { @apply bg-[#0B0E13] text-white antialiased; }
+
+  h1 { @apply text-4xl md:text-5xl font-extrabold tracking-tight; }
+  h2 { @apply text-2xl md:text-3xl font-bold; }
+  h3 { @apply text-xl md:text-2xl font-semibold; }
+
+  p { @apply text-neutral-300 leading-relaxed; }
+  small, .muted { @apply text-neutral-400; }
+
+  a { @apply text-white/90 underline underline-offset-2 decoration-white/20 hover:decoration-white/50; }
+}
+
+/* ---- Components (class shortcuts so markup stays tidy) ---- */
+@layer components {
+  /* layout */
+  .ep-container { @apply mx-auto max-w-6xl px-4 sm:px-6 lg:px-8; }
+
+  /* hero chip */
+  .ep-chip { @apply w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/80 shadow-sm backdrop-blur; }
+
+  /* glass card */
+  .ep-card { @apply rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.02] p-6 shadow-lg; }
+
+  /* buttons (BLUE THEME) */
+  .btn { @apply inline-flex items-center justify-center whitespace-nowrap rounded-xl px-5 py-3 text-sm font-semibold transition min-h-[44px] w-full sm:w-auto; }
+  .btn-primary { @apply bg-sky-600 text-white hover:bg-sky-500 shadow-[0_10px_40px_rgba(37,99,235,.35)]; }
+  .btn-outline { @apply border border-sky-400/40 bg-white/5 text-white hover:bg-white/10; }
+  .btn-ghost { @apply border border-white/10 bg-transparent text-white hover:bg-white/5; }
+  .btn-pill { @apply rounded-full; }
+
+  /* subtle divider line (can be used under header, above footer) */
+  .blue-divider { @apply h-[2px] w-full bg-gradient-to-r from-sky-500/70 via-sky-400/60 to-sky-500/70; }
+
+  /* --- Header nav helpers (keep FR/DE compact & single-line) --- */
+  .nav-wrap { @apply flex items-center gap-1 overflow-x-auto whitespace-nowrap no-scrollbar; }
+  .nav-item { @apply px-2 py-2 text-[13px] font-semibold tracking-tight text-white/85 hover:text-white transition; }
+  .nav-item--active { @apply text-white; }
+}
+
+/* ---- Utilities ---- */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ---- Page glow background (blue only) ---- */
+.page-glow { position: relative; }
+.page-glow::before {
+  content: "";
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(1200px 420px at 18% -10%, rgba(59,130,246,.16) 0%, rgba(59,130,246,0) 60%),
+    radial-gradient(1000px 380px at 110% 0%, rgba(59,130,246,.12) 0%, rgba(59,130,246,0) 60%);
+}
+
+/* ---- Footer top glow (optional utility if you need it elsewhere) ---- */
+.footer-top-glow {
+  background: radial-gradient(40% 60% at 50% 0%, rgba(37,99,235,.35), transparent);
+  @apply pointer-events-none opacity-40 blur-2xl;
+}
+
+/* ---- Mobile readability tweaks ---- */
+@media (max-width: 768px) {
+  header, nav { background: #0B0E13; }
+  header a, nav a { color: #fff; font-weight: 700; }
+}

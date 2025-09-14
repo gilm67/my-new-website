@@ -1,8 +1,16 @@
-streamlit
-pandas
-numpy
-gspread
-google-auth
-matplotlib
-watchdog
-XlsxWriter
+# Core UI + data
+streamlit==1.49.1
+pandas==2.3.2
+numpy==2.0.2
+
+# Google Sheets (service-account auth)
+gspread==6.1.4
+google-auth==2.35.0
+
+# Needed so Streamlit can import TTLCache reliably
+cachetools==5.3.3
+
+# Optional extras (only enable if you use them in code)
+# matplotlib==3.9.2
+# watchdog==4.0.2
+# XlsxWriter==3.2.5

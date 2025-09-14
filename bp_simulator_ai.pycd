@@ -1,0 +1,77 @@
+import streamlit as st
+import pandas as pd
+
+st.set_page_config(page_title="3-Year Business Plan Simulator", layout="wide")
+
+st.title("📊 3-Year Business Plan Simulator with AI Scoring")
+
+# --- Step 1: Candidate Inputs ---
+st.sidebar.header("Candidate Inputs")
+
+nnm_defaults = [50.0, 75.0, 100.0]
+roa_default = 0.7
+
+nnm_y1 = st.sidebar.number_input("Net New Money Year 1 (Mio)", min_value=0.0, step=1.0, value=nnm_defaults[0])
+nnm_y2 = st.sidebar.number_input("Net New Money Year 2 (Mio)", min_value=0.0, step=1.0, value=nnm_defaults[1])
+nnm_y3 = st.sidebar.number_input("Net New Money Year 3 (Mio)", min_value=0.0, step=1.0, value=nnm_defaults[2])
+roa = st.sidebar.number_input("Expected ROA (%)", min_value=0.0, max_value=2.0, step=0.05, value=roa_default)
+
+# --- Step 2: Compute 3-Year Summary ---
+years = ["Year 1", "Year 2", "Year 3"]
+nnm_values = [nnm_y1, nnm_y2, nnm_y3]
+aum_values = [sum(nnm_values[:i+1]) for i in range(3)]
+revenues = [aum * (roa/100) for aum in aum_values]
+
+summary_df = pd.DataFrame({
+    "Year": years,
+    "Net New Money (Mio)": nnm_values,
+    "Cumulative AUM (Mio)": aum_values,
+    "Estimated Revenue (Mio)": revenues
+})
+
+# 🔹 Ensure all numeric columns are float
+for col in ["Net New Money (Mio)", "Cumulative AUM (Mio)", "Estimated Revenue (Mio)"]:
+    summary_df[col] = pd.to_numeric(summary_df[col], errors='coerce').astype(float)
+
+st.subheader("📊 3-Year Business Plan Summary")
+st.dataframe(summary_df.style.format("{:,.2f}"))
+
+# --- Step 3: AI Scoring & Recommendations ---
+st.subheader("🤖 AI Score & Recommendations")
+
+total_nnm = sum(nnm_values)
+avg_roa = roa
+
+score = 0
+
+# Base scoring by NNM
+if total_nnm >= 250:
+    score += 50
+elif total_nnm >= 100:
+    score += 30
+else:
+    score += 10
+
+# ROA scoring
+if avg_roa >= 0.7:
+    score += 50
+elif avg_roa >= 0.5:
+    score += 30
+else:
+    score += 10
+
+# Color-coded feedback
+if score >= 90:
+    color = "green"
+    message = "Excellent – Above top bank expectations ✅"
+elif score >= 70:
+    color = "orange"
+    message = "Good – Competitive but can be improved ⚠️"
+else:
+    color = "red"
+    message = "Weak – Below expectations ❌"
+
+st.metric("AI Score", f"{score}/100")
+st.markdown(f"<div style='padding:10px;background-color:{color};color:white;border-radius:8px'>{message}</div>", unsafe_allow_html=True)
+
+st.caption("💡 Benchmarks: CH Onshore ≥100M / Intl HNWI ≥250M / Typical ROA ≥0.7%")

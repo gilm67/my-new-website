@@ -1,0 +1,451 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from io import BytesIO
+
+# Optional: For AI (OpenAI)
+import openai
+import os
+
+# If using OpenAI API, set your API key here (or use environment variable)
+# os.environ["OPENAI_API_KEY"] = "your_api_key_here"
+# openai.api_key = os.environ.get("OPENAI_API_KEY")
+
+st.set_page_config(page_title="3-Year BP Simulator + AI Analysis", layout="wide")
+
+# ----------------------------
+# Styled Title
+# ----------------------------
+st.markdown(
+    "<h1 style='text-align: center; color: white; background-color:#003366; padding:15px; border-radius:10px;'>"
+    "3-Year Private Banking Business Plan Simulator + AI Analysis</h1>",
+    unsafe_allow_html=True
+)
+st.write("")
+
+# ----------------------------
+# Sidebar: Settings
+# ----------------------------
+st.sidebar.header("Settings")
+currency = st.sidebar.selectbox("Currency", ["CHF", "USD", "EUR"])
+fx_rates = {"CHF": 1.0, "USD": 1.12, "EUR": 1.03}
+fx = fx_rates[currency]
+
+st.sidebar.markdown("---")
+st.sidebar.info("All calculations are internally in CHF and converted to your selected currency.")
+
+# ----------------------------
+# 1. Candidate Information
+# ----------------------------
+with st.expander("📋 Candidate Information", expanded=True):
+    col1, col2, col3 = st.columns(3)
+    candidate_name = col1.text_input("Candidate Name")
+    location = col2.text_input("Location")
+    passport = col3.text_input("Passport Country / Number")
+
+    col4, col5, col6 = st.columns(3)
+    current_employer = col4.text_input("Current Employer")
+    current_title = col5.text_input("Current Title / Position")
+    market_covered = col6.text_input("Market Covered (e.g., Swiss, CEE, MENA, LatAm)")
+
+    col7, col8 = st.columns(2)
+    start_date = col7.date_input("Potential Start Date")
+    work_permit = col8.text_input("Work Permit / Visa Status")
+
+# ----------------------------
+# 2. Current Compensation
+# ----------------------------
+with st.expander("💰 Current Compensation", expanded=True):
+    col1, col2, col3 = st.columns(3)
+    base_salary = col1.number_input(f"Base Salary ({currency})", value=250000, step=10000)
+    bonus = col2.number_input(f"Bonus ({currency})", value=50000, step=5000)
+    other_benefits = col3.number_input(f"Other Benefits ({currency})", value=20000, step=5000)
+
+# ----------------------------
+# 3. Current Client Activity
+# ----------------------------
+with st.expander("👥 Current Client Activity", expanded=True):
+    col1, col2, col3 = st.columns(3)
+    current_aum = col1.number_input("Current AUM (M CHF)", value=100.0, step=1.0)
+    current_clients = col2.number_input("Number of Clients", value=10, step=1)
+    current_revenue = col3.number_input("Current Revenue (M CHF)", value=0.7, step=0.1)
+
+# ----------------------------
+# 4. Financial Inputs
+# ----------------------------
+with st.expander("📊 Financial Inputs", expanded=True):
+    col1, col2 = st.columns(2)
+    roa = col1.number_input("ROA (%)", value=0.7, step=0.1) / 100
+    interest_margin = col2.number_input("Interest Margin (%)", value=0.3, step=0.1) / 100
+
+    col3, col4 = st.columns(2)
+    nnm_year1 = col3.number_input("Net New Money Year 1 (M CHF)", value=20.0, step=1.0)
+    nnm_year2 = col4.number_input("Net New Money Year 2 (M CHF)", value=25.0, step=1.0)
+
+    col5, col6 = st.columns(2)
+    nnm_year3 = col5.number_input("Net New Money Year 3 (M CHF)", value=30.0, step=1.0)
+    social_charges = col6.number_input("Social Charges Rate (%)", value=25.0, step=1.0) / 100
+
+# ----------------------------
+# 5. Calculations
+# ----------------------------
+years = [1, 2, 3]
+nnm = [nnm_year1, nnm_year2, nnm_year3]
+
+aum = [current_aum + sum(nnm[:i+1]) for i in range(3)]  # in M CHF
+
+salary_chf = base_salary / fx
+annual_costs = salary_chf * (1 + social_charges)
+
+revenues, interest_revenues, total_revenues, net_revenues = [], [], [], []
+for i, year in enumerate(years):
+    revenue = aum[i] * 1_000_000 * roa
+    interest_rev = aum[i] * 1_000_000 * interest_margin
+    total_rev = revenue + interest_rev
+    net_rev = total_rev - annual_costs
+
+    revenues.append(revenue * fx)
+    interest_revenues.append(interest_rev * fx)
+    total_revenues.append(total_rev * fx)
+    net_revenues.append(net_rev * fx)
+
+summary_df = pd.DataFrame({
+    "Year": [f"Year {y}" for y in years],
+    "NNM (M CHF)": nnm,
+    f"AUM End Year (M CHF)": aum,
+    f"Revenue ({currency})": revenues,
+    f"Interest Revenue ({currency})": interest_revenues,
+    f"Total Revenue ({currency})": total_revenues,
+    f"Net Revenue after Salary ({currency})": net_revenues
+})
+
+total_row = pd.DataFrame({
+    "Year": ["Total"],
+    "NNM (M CHF)": [sum(nnm)],
+    f"AUM End Year (M CHF)": [aum[-1]],
+    f"Revenue ({currency})": [sum(revenues)],
+    f"Interest Revenue ({currency})": [sum(interest_revenues)],
+    f"Total Revenue ({currency})": [sum(total_revenues)],
+    f"Net Revenue after Salary ({currency})": [sum(net_revenues)]
+})
+summary_df = pd.concat([summary_df, total_row], ignore_index=True)
+
+break_even_year = None
+for i, val in enumerate(net_revenues):
+    if val >= 0:
+        break_even_year = years[i]
+        break
+
+with st.expander("📑 3-Year Projection Summary", expanded=True):
+    def style_rows(row):
+        return ['background-color: #003366; color: white; font-weight: bold;'] * len(row) if row['Year'] == 'Total' else [''] * len(row)
+
+    numeric_cols = summary_df.select_dtypes(include='number').columns
+    styled_df = summary_df.style.format({col: "{:,.0f}" for col in numeric_cols}).apply(style_rows, axis=1)
+    st.dataframe(styled_df, use_container_width=True)
+
+    if break_even_year:
+        st.success(f"✅ Break-even is achieved in Year {break_even_year}.")
+    else:
+        st.warning("⚠️ Break-even is not achieved within 3 years.")
+
+    csv_data = summary_df.to_csv(index=False).encode('utf-8')
+    st.download_button("⬇️ Download Projection Summary (CSV)", csv_data, file_name="3-Year-Business-Plan.csv", mime="text/csv")
+
+# ----------------------------
+# 6. Revenue Projection Chart
+# ----------------------------
+with st.expander("📈 Revenue Projection Chart", expanded=True):
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.plot(years, total_revenues, marker='o', label=f"Total Revenue ({currency})")
+    ax.plot(years, net_revenues, marker='o', label=f"Net Revenue ({currency})")
+    if break_even_year:
+        ax.scatter(break_even_year, net_revenues[break_even_year-1], color='green', s=100, zorder=5, label="Break-even Point")
+    ax.axhline(y=0, color='red', linestyle='--', label="Break-even Line")
+    ax.set_title("Revenue Projection Over 3 Years")
+    ax.set_xlabel("Year")
+    ax.set_ylabel(f"Revenue ({currency})")
+    ax.legend()
+    st.pyplot(fig)
+
+# ----------------------------
+# 7. AI Analysis
+# ----------------------------
+with st.expander("🤖 AI Business Case Analysis", expanded=True):
+    st.write("This section provides an **AI-generated analysis** of your 3-Year Business Plan.")
+    if st.button("Generate AI Analysis"):
+        analysis = (
+            f"Candidate {candidate_name} plans to grow AUM from {current_aum:.1f}M CHF to {aum[-1]:.1f}M CHF over 3 years. "
+            f"Annual net revenues reach {net_revenues[-1]:,.0f} {currency} in year 3. "
+            f"Break-even is {'achieved in year '+str(break_even_year) if break_even_year else 'not achieved within 3 years'}. "
+            f"The NNM trajectory indicates {'aggressive' if sum(nnm)>60 else 'moderate'} growth."
+        )
+        st.success(analysis)
+        # Uncomment below if you want to use OpenAI for a more advanced analysis
+        # response = openai.Completion.create(
+        #     engine="text-davinci-003",
+        #     prompt=f"Analyze this business plan: {summary_df.to_string()}",
+        #     max_tokens=200
+        # )
+        # st.info(response.choices[0].text.strip())cd ~/Desktop/my-new-website
+nano bp_simulator_ai.py
+import streamlit as st
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from io import BytesIO
+from openai import OpenAI
+
+# ----------------------------
+# Configuration
+# ----------------------------
+st.set_page_config(page_title="3-Year Business Plan Simulator", layout="wide")
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])  # Store your key in .streamlit/secrets.toml
+
+# ----------------------------
+# Custom Styled Title
+# ----------------------------
+st.markdown(
+    "<h1 style='text-align: center; color: white; background-color:#003366; padding:15px; border-radius:10px;'>"
+    "3-Year Private Banking Business Plan Simulator</h1>",
+    unsafe_allow_html=True
+)
+st.write("")  # Space
+
+# ----------------------------
+# Sidebar: Settings
+# ----------------------------
+st.sidebar.header("Settings")
+currency = st.sidebar.selectbox("Currency", ["CHF", "USD", "EUR"])
+fx_rates = {"CHF": 1.0, "USD": 1.12, "EUR": 1.03}
+fx = fx_rates[currency]
+
+st.sidebar.markdown("---")
+st.sidebar.info("All calculations are internally in CHF and converted to your selected currency.")
+
+# ----------------------------
+# 1. Candidate Information
+# ----------------------------
+with st.expander("📋 Candidate Information", expanded=True):
+    st.write("Please provide complete professional details of the candidate.")
+    col1, col2, col3 = st.columns(3)
+    candidate_name = col1.text_input("Candidate Name")
+    location = col2.text_input("Location")
+    passport = col3.text_input("Passport Country / Number")
+
+    col4, col5, col6 = st.columns(3)
+    current_employer = col4.text_input("Current Employer")
+    current_title = col5.text_input("Current Title / Position")
+    market_covered = col6.text_input("Market Covered (e.g., Swiss, CEE, MENA, LatAm)")
+
+    col7, col8 = st.columns(2)
+    start_date = col7.date_input("Potential Start Date")
+    work_permit = col8.text_input("Work Permit / Visa Status")
+
+# ----------------------------
+# 2. Current Compensation
+# ----------------------------
+with st.expander("💰 Current Compensation", expanded=True):
+    col1, col2, col3 = st.columns(3)
+    base_salary = col1.number_input(f"Base Salary ({currency})", value=250000, step=10000)
+    bonus = col2.number_input(f"Bonus ({currency})", value=50000, step=5000)
+    other_benefits = col3.number_input(f"Other Benefits ({currency})", value=20000, step=5000)
+
+# ----------------------------
+# 3. Current Client Activity
+# ----------------------------
+with st.expander("👥 Current Client Activity", expanded=True):
+    col1, col2, col3 = st.columns(3)
+    current_aum = col1.number_input("Current AUM (M CHF)", value=100.0, step=1.0)
+    current_clients = col2.number_input("Number of Clients", value=10, step=1)
+    current_revenue = col3.number_input("Current Revenue (M CHF)", value=0.7, step=0.1)
+
+# ----------------------------
+# 4. Financial Inputs
+# ----------------------------
+with st.expander("📊 Financial Inputs", expanded=True):
+    col1, col2 = st.columns(2)
+    roa = col1.number_input("ROA (%)", value=0.7, step=0.1) / 100
+    interest_margin = col2.number_input("Interest Margin (%)", value=0.3, step=0.1) / 100
+
+    col3, col4 = st.columns(2)
+    nnm_year1 = col3.number_input("Net New Money Year 1 (M CHF)", value=20.0, step=1.0)
+    nnm_year2 = col4.number_input("Net New Money Year 2 (M CHF)", value=25.0, step=1.0)
+
+    col5, col6 = st.columns(2)
+    nnm_year3 = col5.number_input("Net New Money Year 3 (M CHF)", value=30.0, step=1.0)
+    social_charges = col6.number_input("Social Charges Rate (%)", value=25.0, step=1.0) / 100
+
+# ----------------------------
+# 5. Calculations
+# ----------------------------
+years = [1, 2, 3]
+nnm = [nnm_year1, nnm_year2, nnm_year3]
+
+# Compute AUM starting from current
+aum = [current_aum + sum(nnm[:i+1]) for i in range(3)]  # in M CHF
+
+# Compute costs and revenues in CHF
+salary_chf = base_salary / fx
+annual_costs = salary_chf * (1 + social_charges)
+
+revenues, interest_revenues, total_revenues, net_revenues = [], [], [], []
+for i, year in enumerate(years):
+    revenue = aum[i] * 1_000_000 * roa
+    interest_rev = aum[i] * 1_000_000 * interest_margin
+    total_rev = revenue + interest_rev
+    net_rev = total_rev - annual_costs
+
+    revenues.append(revenue * fx)
+    interest_revenues.append(interest_rev * fx)
+    total_revenues.append(total_rev * fx)
+    net_revenues.append(net_rev * fx)
+
+summary_df = pd.DataFrame({
+    "Year": [f"Year {y}" for y in years],
+    "NNM (M CHF)": nnm,
+    f"AUM End Year (M CHF)": aum,
+    f"Revenue ({currency})": revenues,
+    f"Interest Revenue ({currency})": interest_revenues,
+    f"Total Revenue ({currency})": total_revenues,
+    f"Net Revenue after Salary ({currency})": net_revenues
+})
+
+# Add Total row
+total_row = pd.DataFrame({
+    "Year": ["Total"],
+    "NNM (M CHF)": [sum(nnm)],
+    f"AUM End Year (M CHF)": [aum[-1]],
+    f"Revenue ({currency})": [sum(revenues)],
+    f"Interest Revenue ({currency})": [sum(interest_revenues)],
+    f"Total Revenue ({currency})": [sum(total_revenues)],
+    f"Net Revenue after Salary ({currency})": [sum(net_revenues)]
+})
+summary_df = pd.concat([summary_df, total_row], ignore_index=True)
+
+# Break-even detection
+break_even_year = None
+for i, val in enumerate(net_revenues):
+    if val >= 0:
+        break_even_year = years[i]
+        break
+
+with st.expander("📑 3-Year Projection Summary", expanded=True):
+    def style_rows(row):
+        return ['background-color: #003366; color: white; font-weight: bold;'] * len(row) if row['Year'] == 'Total' else [''] * len(row)
+
+    numeric_cols = summary_df.select_dtypes(include='number').columns
+    styled_df = summary_df.style.format({col: "{:,.0f}" for col in numeric_cols}).apply(style_rows, axis=1)
+    st.dataframe(styled_df, use_container_width=True)
+
+    if break_even_year:
+        st.success(f"✅ Break-even is achieved in Year {break_even_year}.")
+    else:
+        st.warning("⚠️ Break-even is not achieved within 3 years.")
+
+    # Download button
+    csv_data = summary_df.to_csv(index=False).encode('utf-8')
+    st.download_button("⬇️ Download Projection Summary (CSV)", csv_data, file_name="3-Year-Business-Plan.csv", mime="text/csv")
+
+# ----------------------------
+# 6. Revenue Projection Chart
+# ----------------------------
+with st.expander("📈 Revenue Projection Chart", expanded=True):
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.plot(years, total_revenues, marker='o', label=f"Total Revenue ({currency})")
+    ax.plot(years, net_revenues, marker='o', label=f"Net Revenue ({currency})")
+    if break_even_year:
+        ax.scatter(break_even_year, net_revenues[break_even_year-1], color='green', s=100, zorder=5, label="Break-even Point")
+    ax.axhline(y=0, color='red', linestyle='--', label="Break-even Line")
+    ax.set_title("Revenue Projection Over 3 Years")
+    ax.set_xlabel("Year")
+    ax.set_ylabel(f"Revenue ({currency})")
+    ax.legend()
+    st.pyplot(fig)
+
+# ----------------------------
+# 7. Enhanced NNA Projection Section
+# ----------------------------
+with st.expander("🔹 Detailed NNA Projection", expanded=True):
+    st.markdown("Add **prospects** with their AUM and expected Net New Money projections. "
+                "Use the dropdown to indicate **Source** of each client:")
+
+    prospects_data = pd.DataFrame({
+        "Prospect": ["Client 1", "Client 2", "Client 3"],
+        "Source": ["Self-acquired", "Inherited", "Finder"],
+        "Year 1 Best (M CHF)": [5.0, 7.0, 2.0],
+        "Year 1 Worst (M CHF)": [2.0, 3.0, 1.0],
+        "Year 2 Best (M CHF)": [6.0, 8.0, 3.0],
+        "Year 2 Worst (M CHF)": [3.0, 4.0, 1.5],
+        "Year 3 Best (M CHF)": [7.0, 9.0, 4.0],
+        "Year 3 Worst (M CHF)": [3.5, 4.5, 2.0],
+    })
+
+    edited_prospects = st.data_editor(
+        prospects_data,
+        num_rows="dynamic",
+        use_container_width=True,
+        column_config={
+            "Source": st.column_config.SelectboxColumn(
+                options=["Self-acquired", "Inherited", "Finder"], required=True
+            )
+        },
+        key="nna_projection"
+    )
+
+    totals = {col: edited_prospects[col].sum() for col in edited_prospects.columns if "M CHF" in col}
+    totals_df = pd.DataFrame([totals], index=["Total"])
+
+    def style_totals(row):
+        return ['background-color: #003366; color: white; font-weight: bold;'] * len(row)
+
+    styled_totals_df = totals_df.style.format("{:,.2f}").apply(style_totals, axis=1)
+    st.subheader("NNA Projection Totals")
+    st.dataframe(styled_totals_df, use_container_width=True)
+
+    # Download prospects CSV
+    csv_prospects = edited_prospects.to_csv(index=False).encode('utf-8')
+    st.download_button("⬇️ Download NNA Projections (CSV)", csv_prospects, file_name="NNA-Projections.csv", mime="text/csv")
+
+# ----------------------------
+# 8. AI Insights Section
+# ----------------------------
+with st.expander("🤖 AI Insights", expanded=True):
+    st.markdown("Generate an **AI-powered analysis** of the candidate's 3-year business plan.")
+
+    if st.button("Generate AI Analysis"):
+        # Convert data to text for AI prompt
+        summary_text = summary_df.to_string(index=False)
+        prospects_text = edited_prospects.to_string(index=False)
+
+        prompt = f"""
+        You are a senior private banking recruiter. Analyze the following 3-Year Private Banking Business Plan.
+
+        Candidate: {candidate_name}, Market: {market_covered}
+
+        Summary (financial projection):
+        {summary_text}
+
+        Prospects & NNA Projection:
+        {prospects_text}
+
+        Break-even achieved in Year: {break_even_year if break_even_year else "Not achieved in 3 years"}
+
+        Please provide:
+        1. Key strengths
+        2. Key risks
+        3. Profitability & market attractiveness score (0-100)
+        4. A short recruiter recommendation.
+        """
+
+        with st.spinner("Analyzing with AI..."):
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.4
+            )
+            ai_insight = response.choices[0].message["content"]
+
+        st.subheader("AI Analysis Result")
+        st.write(ai_insight)

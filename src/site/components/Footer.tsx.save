@@ -1,0 +1,64 @@
+
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid gap-10 md:grid-cols-3">
+          {/* Column 1 – Markets */}
+          <nav aria-label={t.footer.marketsWeServe}>
+            <h3 className="text-sm font-semibold text-white/90">{t.footer.marketsWeServe}</h3>
+            <ul className="mt-3 grid grid-cols-2 gap-y-2 text-sm text-white/80">
+              <li><Link className="hover:text-white" href={L('/markets/geneva',     locale, pathname)}>Geneva</Link></li>
+              <li><Link className="hover:text-white" href={L('/markets/zurich',     locale, pathname)}>Zürich</Link></li>
+              <li><Link className="hover:text-white" href={L('/markets/dubai',      locale, pathname)}>Dubai</Link></li>
+              <li><Link className="hover:text-white" href={L('/markets/singapore',  locale, pathname)}>Singapore</Link></li>
+              <li><Link className="hover:text-white" href={L('/markets/hong-kong',  locale, pathname)}>Hong Kong</Link></li>
+              <li><Link className="hover:text-white" href={L('/markets/london',     locale, pathname)}>London</Link></li>
+              <li><Link className="hover:text-white" href={L('/markets/new-york',   locale, pathname)}>New York</Link></li>
+              <li><Link className="hover:text-white" href={L('/markets/miami',      locale, pathname)}>Miami</Link></li>
+            </ul>
+            <div className="mt-3">
+              <Link className="inline-flex items-center gap-1 text-sm font-semibold text-sky-400 hover:text-sky-300"
+                    href={L('/markets', locale, pathname)}>
+                {t.footer.viewAllMarkets}
+              </Link>
+            </div>
+          </nav>
+
+          {/* Column 2 – Company */}
+          <nav aria-label={t.footer.company}>
+            <h3 className="text-sm font-semibold text-white/90">{t.footer.company}</h3>
+            <ul className="mt-3 space-y-2 text-sm text-white/80">
+              <li><Link className="hover:text-white" href={L('/jobs',            locale, pathname)}>{ui[locale].nav.jobs}</Link></li>
+              <li><Link className="hover:text-white" href={L('/insights',        locale, pathname)}>{ui[locale].nav.insights}</Link></li>
+              <li><Link className="hover:text-white" href={L('/hiring-managers', locale, pathname)}>Hiring Managers</Link></li>
+              <li><Link className="hover:text-white" href={L('/about',           locale, pathname)}>{ui[locale].nav.about}</Link></li>
+              <li><Link className="hover:text-white" href={L('/contact',         locale, pathname)}>{ui[locale].nav.contact}</Link></li>
+            </ul>
+          </nav>
+
+          {/* Column 3 – Brand (right side on desktop) */}
+          <div className="md:text-right">
+            <h3 className="text-sm font-bold text-white">{t.footer.executivePartners}</h3>
+            <p className="mt-2 text-sm text-white/70">
+              {t.footer.description}
+            </p>
+            <p className="mt-2 text-xs text-white/50">
+              {t.footer.coverage}
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom row */}
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-6 text-xs text-white/50">
+          <span>© {new Date().getFullYear()} Executive Partners. All rights reserved.</span>
+          <Link
+            href="https://www.linkedin.com/company/executive-partners/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-sky-400 hover:text-sky-300"
+          >
+            {t.footer.linkedin}
+          </Link>
+        </div>
+      </div>
+    </footer>
+  );
+}
