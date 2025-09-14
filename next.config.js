@@ -1,27 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    // ✅ Temporarily ignore ESLint errors during build
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    // ✅ Temporarily ignore TypeScript errors during build
-    ignoreBuildErrors: true,
-  },
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
 
-  // ✅ Canonical redirects so locale pages are easy to reach
-  async redirects() {
+  async rewrites() {
+    // 👇 legacy host = your old/live project
+    const LEGACY = 'https://executive-partners-app-mqu8.vercel.app';
+
     return [
-      // No localized homepage yet → send "/" to EN About
-      { source: '/', destination: '/en/about', permanent: false },
-
-      // Convenience: plain /about → English About
-      { source: '/about', destination: '/en/about', permanent: false },
-
-      // Locale roots go to their About pages
-      { source: '/en', destination: '/en/about', permanent: false },
-      { source: '/fr', destination: '/fr/about', permanent: false },
-      { source: '/de', destination: '/de/about', permanent: false },
+      { source: '/',             destination: `${LEGACY}/` },
+      { source: '/jobs',         destination: `${LEGACY}/jobs` },
+      { source: '/candidates',   destination: `${LEGACY}/candidates` },
+      { source: '/contact',      destination: `${LEGACY}/contact` },
+      { source: '/bp-simulator', destination: `${LEGACY}/bp-simulator` },
     ];
   },
 };
