@@ -1,9 +1,10 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "Exec Partners",
-  description: "Executive Partners",
+  description: "Executive search",
 };
 
 export default function RootLayout({
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AppShell>{children}</AppShell>
+      </body>
     </html>
   );
 }
