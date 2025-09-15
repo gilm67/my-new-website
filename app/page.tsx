@@ -1,4 +1,4 @@
-import LandingSplash from '@/src/components/LandingSplash';
+import LandingSplash from "@/components/LandingSplash";
 
 export default function Home() {
   return <LandingSplash />;

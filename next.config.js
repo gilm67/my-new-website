@@ -3,24 +3,32 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
 
-  // 👇 Add redirects for locale root paths
   async redirects() {
     return [
-      { source: '/en', destination: '/en/about', permanent: true },
-      { source: '/fr', destination: '/fr/about', permanent: true },
-      { source: '/de', destination: '/de/about', permanent: true },
+      // optional helper: /en → /en/about
+      { source: '/en', destination: '/en/about', permanent: false },
+
+      // fix capitalized legacy links
+      { source: '/en/markets/Geneva', destination: '/markets/geneva', permanent: true },
+      { source: '/en/markets/Zurich', destination: '/markets/zurich', permanent: true },
     ];
   },
 
-  // 👇 Legacy rewrites
   async rewrites() {
-    const LEGACY = 'https://executive-partners-app-mqu8.vercel.app';
+    const LEGACY = 'https://www.execpartners.ch';
+    const STREAMLIT = 'https://ep-bp-simulator.streamlit.app';
+
     return [
-      { source: '/',             destination: `${LEGACY}/` },
-      { source: '/jobs',         destination: `${LEGACY}/jobs` },
-      { source: '/candidates',   destination: `${LEGACY}/candidates` },
-      { source: '/contact',      destination: `${LEGACY}/contact` },
-      { source: '/bp-simulator', destination: `${LEGACY}/bp-simulator` },
+      // DO NOT rewrite "/" — we want the splash to render there
+
+      // keep these pages identical to the live site
+      { source: '/jobs',        destination: `${LEGACY}/jobs` },
+      { source: '/candidates',  destination: `${LEGACY}/candidates` },
+      { source: '/contact',     destination: `${LEGACY}/contact` },
+
+      // Streamlit app
+      { source: '/bp-simulator',         destination: `${STREAMLIT}/` },
+      { source: '/bp-simulator/:path*',  destination: `${STREAMLIT}/:path*` },
     ];
   },
 };
